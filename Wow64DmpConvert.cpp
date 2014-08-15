@@ -74,39 +74,23 @@ static DumpMemory * CreateDumpMemory(void * dump)
 	return mlx64 || mlx86 ? dm.release() : nullptr;
 }
 
-static void MemTest(ULONG64 addr, const DumpMemory::Ptr & dm)
-{
-	ULONG64 translated = dm->TranslateAddress(addr);
-	if (!translated)
-	{
-		printf("not found 0x%I64x\n", addr);
-		return;
-	}
-
-	printf("0x%I64x 0x%x\n", addr, *((DWORD*)translated));
-}
-
 int _tmain(int argc, _TCHAR* argv[])
 {
-	// - partial mapping
+	if (argc < 2)
+	{
+		printf("usage: Wow64DmpConvert.exe dmp_file\n");
+		return -1;
+	}
 
-	const wchar_t dmp_file[] = L"d:\\x64.dmp";
 
 	try
 	{
-		const size_t min_mapping_size = 0/*0x1000*/;
-		const SectionPtr dump(CreateFileSectionRW(dmp_file), min_mapping_size);
+		const SectionPtr dump(CreateFileSectionRW(argv[1]), 0);
 		
-		//TODO: enable
-		//SetCpuArchitectureX86(dump);
+		SetCpuArchitectureX86(dump);
 		
 		DumpMemory::Ptr dm(CreateDumpMemory(dump));
 		SwitchThreadsTebToX86(dump, dm);
-
-		//MemTest(0x24cf9d8, dm);
-		//MemTest(0x24cf9da, dm);
-		//MemTest(0x76ff0512, dm);
-		//MemTest(0x77ff0512, dm);
 	}
 	catch (const std::runtime_error & e)
 	{
@@ -115,4 +99,3 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	return 0;
 }
-
