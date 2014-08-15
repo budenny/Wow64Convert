@@ -1,69 +1,8 @@
 #include "stdafx.h"
+#include "SectionPtr.h"
 #include <assert.h>
 #include "DumpMemory.h"
 
-typedef std::shared_ptr<std::remove_pointer<HANDLE>::type> HandleHolder;
-HandleHolder make_handle_holder(const HANDLE & h)
-{
-	return HandleHolder(h, &::CloseHandle);
-}
-
-//////////////////////////////////////////////////////////////////////////
-
-class SectionPtr
-{
-	public:
-		SectionPtr(const HandleHolder & section, const size_t & sz)
-			: _section(section)
-			, _ptr(MapSection(_section, sz))
-		{
-		}
-
-		operator void*() const
-		{
-			return _ptr.get();
-		}
-
-	private:
-		SectionPtr(const SectionPtr&);
-		SectionPtr& operator=(const SectionPtr&);
-
-		HandleHolder _section;
-		
-		struct Unmapper { void operator ()( void *p){ ::UnmapViewOfFile(p);} };
-		std::unique_ptr<void, Unmapper> _ptr;
-
-		static void * MapSection(const HandleHolder & fm, const size_t & sz)
-		{
-			void *out = ::MapViewOfFile(fm.get(), FILE_MAP_ALL_ACCESS, 0, 0, sz);
-			if (out == NULL)
-				throw std::runtime_error("map file mapping");
-
-			return out;
-		}
-};
-
-//////////////////////////////////////////////////////////////////////////
-
-static HandleHolder CreateFileSectionRW(const std::wstring & fname)
-{
-	const HandleHolder & file = make_handle_holder(
-		::CreateFile(fname.c_str(), GENERIC_READ | GENERIC_WRITE, 0,
-		NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL));
-
-	if (file.get() == INVALID_HANDLE_VALUE)
-		throw std::runtime_error("open file");
-
-	const HandleHolder & fm = make_handle_holder(
-		::CreateFileMapping(file.get(), NULL, PAGE_READWRITE, 0, 0, NULL));
-	
-	if (fm == NULL)
-		throw std::runtime_error("create file mapping");
-
-	return fm;
-}
-
-//////////////////////////////////////////////////////////////////////////
 
 template <typename T, MINIDUMP_STREAM_TYPE TYPE>
 T* GetDumpStream(void * dump)
@@ -152,14 +91,6 @@ static bool ListMemX86(void * dump)
 			ml->MemoryRanges[i].StartOfMemoryRange + ml->MemoryRanges[i].Memory.DataSize,
 			(ULONG64)dump + ml->MemoryRanges[i].Memory.Rva);
 	}
-
-/*
-	for(MemBlocks::const_iterator i = memory.begin(); i != memory.end(); ++i)
-	{
-		printf("X86 addr=0x%I64x dump_addr=0x%I64x sz=0x%I64x 0x%x\n",i->start_address, i->dump_address, i->size, *((DWORD*)i->dump_address));
-	}
-*/
-	dm.Test();
 
 	return ml->NumberOfMemoryRanges != 0;
 }

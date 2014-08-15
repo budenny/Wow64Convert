@@ -1,4 +1,5 @@
 #pragma once
+#include "IntervalTree.h"
 
 class DumpMemory
 {
@@ -9,27 +10,15 @@ public:
 	void Test() const;
 private:
 
-	struct MemoryBlock
+	struct MemoryBlock : public Interval<ULONG64>
 	{
-		ULONG64 start;
-		ULONG64 end;
 		ULONG64 ptr;
-
-		explicit MemoryBlock(const ULONG64 & addr = 0)
-			: start(addr)
-			, end(addr + 1)
-			, ptr(0)
-		{
-		};
-
-		bool operator <(const MemoryBlock & r) const;
-		bool Contains(const ULONG64 &v) const;
-		ULONG64 Translate(const ULONG64 & addr) const;
+		
+		explicit MemoryBlock(const ULONG64 &start_); //XXX
+		MemoryBlock(const ULONG64 &start_, const ULONG64 &end_, const ULONG64 &ptr_);
+		ULONG64 TranslateAddress(const ULONG64 &addr) const;
 	};
 
-	typedef std::set<MemoryBlock> MemoryBlockSet;
-	MemoryBlockSet _memory;
-
-	const MemoryBlock * Find(const ULONG64 & addr) const;
+	IntervalTree<MemoryBlock> _memory;
 };
 
