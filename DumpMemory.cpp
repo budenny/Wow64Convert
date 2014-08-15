@@ -1,12 +1,6 @@
 #include "stdafx.h"
 #include "DumpMemory.h"
 
-void DumpMemory::AddBlock( const ULONG64 & start, const ULONG64 & end, const ULONG64 & ptr )
-{
-	MemoryBlock mb(start, end, ptr);
-	_memory.Insert(mb);
-}
-
 ULONG64 DumpMemory::TranslateAddress( const ULONG64 & addr ) const
 {
 	const MemoryBlock * mb = _memory.Find(addr);
@@ -14,6 +8,34 @@ ULONG64 DumpMemory::TranslateAddress( const ULONG64 & addr ) const
 		return 0;
 	
 	return mb->TranslateAddress(addr);
+}
+
+void DumpMemory::AddBlocks( void * dump, PMINIDUMP_MEMORY64_LIST ml )
+{
+	ULONG64 data_addr = (ULONG64)dump + ml->BaseRva;
+	for (unsigned int i = 0; i < ml->NumberOfMemoryRanges; ++i)
+	{
+		const MemoryBlock mb(
+			ml->MemoryRanges[i].StartOfMemoryRange,
+			ml->MemoryRanges[i].StartOfMemoryRange + ml->MemoryRanges[i].DataSize,
+			data_addr);
+
+		_memory.Insert(mb);
+		data_addr += ml->MemoryRanges[i].DataSize;
+	}
+}
+
+void DumpMemory::AddBlocks( void * dump, PMINIDUMP_MEMORY_LIST ml )
+{
+	for (unsigned int i = 0; i < ml->NumberOfMemoryRanges; ++i)
+	{
+		const MemoryBlock mb(
+			ml->MemoryRanges[i].StartOfMemoryRange,
+			ml->MemoryRanges[i].StartOfMemoryRange + ml->MemoryRanges[i].Memory.DataSize,
+			(ULONG64)dump + ml->MemoryRanges[i].Memory.Rva);
+
+		_memory.Insert(mb);
+	}
 }
 
 DumpMemory::MemoryBlock::MemoryBlock( 
@@ -33,8 +55,5 @@ DumpMemory::MemoryBlock::MemoryBlock( const ULONG64 &start_ )
 
 ULONG64 DumpMemory::MemoryBlock::TranslateAddress( const ULONG64 &addr ) const
 {
-	ULONG64 out = ptr + (addr - start);
-	printf("Translate: 0x%I64x 0x%I64x 0x%I64x 0x%I64x\n",
-		addr, start, out, ptr);
-	return out;
+	return ptr + (addr - start);
 }

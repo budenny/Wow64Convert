@@ -28,7 +28,7 @@ public:
 
 	const T * Find(const typename T::value_type & v) const
 	{
-		Container::const_iterator i = _intervals.lower_bound(T(v));
+		auto i = _intervals.lower_bound(T(v));
 		if(i == _intervals.end() || v < i->start)
 		{
 			if(i == _intervals.begin())
@@ -38,5 +38,4 @@ public:
 		}
 		return i->Contains(v) ? &*i : nullptr;
 	}
-
 };

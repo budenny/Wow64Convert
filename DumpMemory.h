@@ -4,12 +4,15 @@
 class DumpMemory
 {
 public:
-	void AddBlock(const ULONG64 & start, const ULONG64 & end, const ULONG64 & ptr);
-	ULONG64 TranslateAddress(const ULONG64 & addr) const;
-		
-	void Test() const;
-private:
 
+	void AddBlocks(void * dump, PMINIDUMP_MEMORY64_LIST ml);
+	void AddBlocks(void * dump, PMINIDUMP_MEMORY_LIST ml);
+
+	ULONG64 TranslateAddress(const ULONG64 & addr) const;
+
+	typedef std::shared_ptr<DumpMemory> Ptr;
+
+private:
 	struct MemoryBlock : public Interval<ULONG64>
 	{
 		ULONG64 ptr;
