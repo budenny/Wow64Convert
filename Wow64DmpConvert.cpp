@@ -18,7 +18,7 @@ T* GetDumpStream(void * dump)
 static void SetCpuArchitectureX86(void * dump)
 {
 	PMINIDUMP_SYSTEM_INFO si = GetDumpStream<MINIDUMP_SYSTEM_INFO, SystemInfoStream>(dump);
-	if (!si)//todo: validation
+	if (!si)
 	{
 		printf("SetCpuArchitectureX86 - system info not found");
 		return;
@@ -30,14 +30,26 @@ static void SetCpuArchitectureX86(void * dump)
 
 static void SwitchThreadTebToX86(PMINIDUMP_THREAD thrd, const DumpMemory::Ptr & dm)
 {
-	//todo: validation
-	printf("thread id 0x%x teb 0x%I64x\n", thrd->ThreadId, thrd->Teb);
+	const ULONG64 original_teb = dm->TranslateAddress(thrd->Teb);
+	if (!original_teb)
+	{
+		printf("SwitchThreadTebToX86(0x%x) - there is no memory block(0x%I64x) in dump\n",
+			thrd->ThreadId, thrd->Teb);
+		return;
+	}
+
+	const DWORD wow64_teb = *((DWORD*)original_teb);
+
+	printf("Change thread 0x%x TEB 0x%I64x->0x%x\n",
+		thrd->ThreadId, thrd->Teb, wow64_teb);
+
+	thrd->Teb = wow64_teb;
 }
 
 static void SwitchThreadsTebToX86(void * dump, const DumpMemory::Ptr & dm)
 {
 	PMINIDUMP_THREAD_LIST tl = GetDumpStream<MINIDUMP_THREAD_LIST, ThreadListStream>(dump);
-	if (!tl)//todo: validation
+	if (!tl)
 	{
 		printf("SwitchThreadsTebToX86 - thread list not found");
 		return;

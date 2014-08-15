@@ -22,6 +22,7 @@ void DumpMemory::AddBlocks( void * dump, PMINIDUMP_MEMORY64_LIST ml )
 
 		_memory.Insert(mb);
 		data_addr += ml->MemoryRanges[i].DataSize;
+		printf("add memory block (0x%I64x - 0x%I64x)\n", mb.start, mb.end);
 	}
 }
 
@@ -35,6 +36,7 @@ void DumpMemory::AddBlocks( void * dump, PMINIDUMP_MEMORY_LIST ml )
 			(ULONG64)dump + ml->MemoryRanges[i].Memory.Rva);
 
 		_memory.Insert(mb);
+		printf("add memory block (0x%I64x - 0x%I64x)\n", mb.start, mb.end);
 	}
 }
 
